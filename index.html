@@ -211,7 +211,7 @@
     <h1>Learniverse</h1>
     <h4>By Monish</h4>
     <p>Pick a fun and productive cure for your boredom. Offline fun + AI-powered features.</p>
-    <div id="ai-badge">checking AI…</div>
+    <div id="ai-badge">AI: ready · limited free tier</div>
   </header>
 
   <nav id="nav">
@@ -325,6 +325,7 @@
         <button class="action" id="clicker-btn">Start</button>
         <div class="big-num" id="clicker-count" style="margin-top:12px;">0</div>
         <div class="output" id="clicker-out">Time left: 10.0s</div>
+        <div class="output" id="clicker-best" style="margin-top:6px;"></div>
       </div>
     </section>
 
@@ -420,20 +421,40 @@
     </section>
   </main>
 
-  <footer>Offline fun runs 100% in your browser (great for GitHub Pages) · AI features need the local Python app</footer>
+  <footer>Runs 100% in your browser on GitHub Pages — no backend, no key · AI answers come from a free third-party service (Pollinations.ai); your prompts are sent there</footer>
 
 <script>
   // ---- helpers ------------------------------------------------------------
-  async function getJSON(url, opts) {
-    const res = await fetch(url, opts);
-    return res.json();
-  }
-  function postJSON(url, body) {
-    return getJSON(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body || {}),
-    });
+  // AI runs keyless via Pollinations, called straight from the browser, so the
+  // whole app works on static hosting (GitHub Pages) with no backend or key.
+  // The free anonymous tier only serves the default model via the plain GET
+  // endpoint — specifying a model/system param triggers 402. So we inline the
+  // instructions into the prompt text and send no extra params.
+  const AI_BASE = "https://text.pollinations.ai/";
+
+  // Combine instructions + user input into one plain prompt, send it, and
+  // return the reply text. Throws a friendly message on failure.
+  async function aiChat(instructions, userInput) {
+    const prompt = userInput ? (instructions + "\n\n" + userInput) : instructions;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const res = await fetch(AI_BASE + encodeURIComponent(prompt), { signal: controller.signal });
+      if (!res.ok) {
+        if (res.status === 429 || res.status === 402) {
+          throw new Error("Free AI is busy or rate-limited right now. Wait a few seconds and retry.");
+        }
+        throw new Error("AI service error (" + res.status + "). Please retry.");
+      }
+      const text = (await res.text()).trim();
+      if (!text) throw new Error("AI returned an empty response. Please retry.");
+      return text;
+    } catch (e) {
+      if (e.name === "AbortError") throw new Error("AI timed out. Please retry.");
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
   }
   function $(id) { return document.getElementById(id); }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -713,34 +734,14 @@
     });
   });
 
-  // ---- backend detection --------------------------------------------------
-  // Offline features always work (data is embedded above). The AI features
-  // need the local Python/Flask backend, which does NOT exist on static hosts
-  // like GitHub Pages. We probe /api/status and disable AI gracefully if absent.
-  let AI_ENABLED = false;
-  const AI_BUTTON_IDS = ["coach-btn", "riddle-btn", "explain-btn"];
-
-  function setAiUnavailable(reason) {
-    AI_ENABLED = false;
+  // ---- AI status ----------------------------------------------------------
+  // AI runs keyless via Pollinations directly from the browser — no backend,
+  // so it works on static hosts like GitHub Pages. Just mark it ready.
+  (function initAiBadge() {
     const badge = $("ai-badge");
-    badge.textContent = "AI: off — " + reason;
-    badge.className = "off";
-    AI_BUTTON_IDS.forEach((id) => { const b = $(id); if (b) b.disabled = true; });
-  }
-
-  getJSON("/api/status").then((s) => {
-    const badge = $("ai-badge");
-    if (s && s.ai_enabled) {
-      AI_ENABLED = true;
-      badge.textContent = "AI: ready (" + s.model + " · " + s.effort + ")";
-      badge.className = "on";
-    } else {
-      setAiUnavailable("run the local Python app + set OPENAI_API_KEY");
-    }
-  }).catch(() => {
-    // No backend at all (e.g. GitHub Pages). Offline fun still works fine.
-    setAiUnavailable("offline-only build — run internal.py locally for AI");
-  });
+    badge.textContent = "AI: ready · limited free tier";
+    badge.className = "on";
+  })();
 
   // ---- offline features (pure client-side, no backend needed) -------------
   $("activity-btn").addEventListener("click", () => {
@@ -855,9 +856,24 @@
   });
 
   // ---- clicker game -------------------------------------------------------
-  let cCount = 0, cRunning = false, cEnd = 0;
+  const CLICKER_BEST_KEY = "clicker-best-clicks";
+  let cCount = 0, cRunning = false, cEnd = 0, cCooldown = false;
   const clickerBtn = $("clicker-btn");
+
+  function getClickerBest() {
+    try { return parseInt(localStorage.getItem(CLICKER_BEST_KEY), 10) || 0; }
+    catch (e) { return 0; }
+  }
+  function renderClickerBest() {
+    const best = getClickerBest();
+    $("clicker-best").textContent = best > 0
+      ? "🏆 Best: " + best + " clicks · " + (best / 10).toFixed(1) + " CPS"
+      : "🏆 Best: — (play a round!)";
+  }
+  renderClickerBest();
+
   clickerBtn.addEventListener("click", () => {
+    if (cCooldown) return;                     // ignore stray momentum clicks
     if (cRunning) { cCount++; $("clicker-count").textContent = cCount; return; }
     cRunning = true; cCount = 0;
     $("clicker-count").textContent = "0";
@@ -868,8 +884,31 @@
       $("clicker-out").textContent = "Time left: " + (left / 1000).toFixed(1) + "s";
       if (left <= 0) {
         cRunning = false;
-        clickerBtn.textContent = "Play again";
-        $("clicker-out").textContent = "Done! " + cCount + " clicks (" + (cCount / 10).toFixed(1) + " CPS)";
+        const cps = (cCount / 10).toFixed(1);
+        const best = getClickerBest();
+        let done = "Done! " + cCount + " clicks (" + cps + " CPS)";
+        if (cCount > best) {
+          try { localStorage.setItem(CLICKER_BEST_KEY, String(cCount)); } catch (e) {}
+          renderClickerBest();
+          done += " — new best! 🎉";
+        }
+        $("clicker-out").textContent = done;
+        // Cooldown: block accidental clicks for 3s, then allow a fresh round.
+        cCooldown = true;
+        clickerBtn.disabled = true;
+        let secs = 3;
+        clickerBtn.textContent = "Play again in " + secs + "s";
+        const cd = setInterval(() => {
+          secs--;
+          if (secs <= 0) {
+            clearInterval(cd);
+            cCooldown = false;
+            clickerBtn.disabled = false;
+            clickerBtn.textContent = "Play again";
+          } else {
+            clickerBtn.textContent = "Play again in " + secs + "s";
+          }
+        }, 1000);
         return;
       }
       requestAnimationFrame(tick);
@@ -917,66 +956,110 @@
     a.click();
   });
 
-  // ---- AI helpers ---------------------------------------------------------
+  // ---- AI features (keyless via Pollinations) -----------------------------
   function setSpin(id, on) { $(id).classList.toggle("on", on); }
-  function showResult(el, data) {
-    el.textContent = data.error ? "⚠ " + data.error : (data.result || data.riddle || "");
+
+  // Render an error with an inline Retry button that re-runs the action.
+  function showError(el, message, retryFn) {
+    el.textContent = "⚠ " + message + " ";
+    const btn = document.createElement("button");
+    btn.className = "ghost";
+    btn.textContent = "Retry";
+    btn.addEventListener("click", retryFn);
+    el.appendChild(btn);
   }
 
-  $("coach-btn").addEventListener("click", async () => {
+  const COACH_SYS = "You are an upbeat, creative boredom coach. Think carefully about what would genuinely suit this person, then give a warm, motivating, practical answer.";
+  const RIDDLE_SYS = "You are a master riddle-smith. Craft an elegant, fair riddle and reason carefully to ensure it has a single clear intended answer.";
+  const RIDDLE_CHECK_SYS = "You judge riddle answers fairly. Accept reasonable synonyms or phrasings. Reason step by step before deciding, but only output the requested format.";
+  const EXPLAIN_SYS = "You explain weird, random, or curious questions deeply yet clearly. Think hard, then answer with vivid analogies, a couple of surprising details, and a friendly tone. Keep it under 220 words.";
+
+  async function runCoach() {
     const btn = $("coach-btn");
     btn.disabled = true; setSpin("coach-spin", true); $("coach-out").textContent = "";
     try {
-      const d = await postJSON("/api/ai/coach", {
-        interests: $("coach-interests").value,
-        time: $("coach-time").value,
-        energy: $("coach-energy").value,
-      });
-      showResult($("coach-out"), d);
-    } catch (e) { $("coach-out").textContent = "⚠ " + e.message; }
-    finally { btn.disabled = false; setSpin("coach-spin", false); }
-  });
+      const interests = $("coach-interests").value.trim() || "anything";
+      const time = $("coach-time").value;
+      const energy = $("coach-energy").value;
+      const prompt =
+        "I'm bored. My interests are: " + interests + ". I have about " + time +
+        " of free time. My energy level is " + energy + ". Suggest ONE specific, doable " +
+        "activity tailored to me, then give 3 short concrete steps to start it right now. " +
+        "Keep it under 130 words.";
+      $("coach-out").textContent = await aiChat(COACH_SYS, prompt);
+    } catch (e) {
+      showError($("coach-out"), e.message, runCoach);
+    } finally {
+      btn.disabled = false; setSpin("coach-spin", false);
+    }
+  }
+  $("coach-btn").addEventListener("click", runCoach);
 
   let currentRiddle = "";
-  $("riddle-btn").addEventListener("click", async () => {
+  async function runRiddle() {
     const btn = $("riddle-btn");
     btn.disabled = true; setSpin("riddle-spin", true);
     $("riddle-out").textContent = ""; $("riddle-verdict").textContent = "";
     $("riddle-answer-area").style.display = "none";
     try {
-      const d = await postJSON("/api/ai/riddle", { difficulty: $("riddle-diff").value });
-      showResult($("riddle-out"), d);
-      if (!d.error && d.riddle) {
-        currentRiddle = d.riddle;
-        $("riddle-guess").value = "";
-        $("riddle-answer-area").style.display = "block";
-      }
-    } catch (e) { $("riddle-out").textContent = "⚠ " + e.message; }
-    finally { btn.disabled = false; setSpin("riddle-spin", false); }
-  });
+      const difficulty = $("riddle-diff").value;
+      const prompt =
+        "Create ONE original " + difficulty + " riddle. Make it clever and solvable. " +
+        "Return ONLY the riddle text itself — do not reveal the answer.";
+      const riddle = await aiChat(RIDDLE_SYS, prompt);
+      currentRiddle = riddle;
+      $("riddle-out").textContent = riddle;
+      $("riddle-guess").value = "";
+      $("riddle-answer-area").style.display = "block";
+    } catch (e) {
+      showError($("riddle-out"), e.message, runRiddle);
+    } finally {
+      btn.disabled = false; setSpin("riddle-spin", false);
+    }
+  }
+  $("riddle-btn").addEventListener("click", runRiddle);
 
-  $("riddle-check").addEventListener("click", async () => {
+  async function runRiddleCheck() {
     const btn = $("riddle-check");
+    const guess = $("riddle-guess").value.trim();
+    if (!currentRiddle || !guess) {
+      $("riddle-verdict").textContent = "⚠ Generate a riddle and type a guess first.";
+      return;
+    }
     btn.disabled = true; setSpin("riddle-check-spin", true); $("riddle-verdict").textContent = "";
     try {
-      const d = await postJSON("/api/ai/riddle/check", {
-        riddle: currentRiddle,
-        guess: $("riddle-guess").value,
-      });
-      showResult($("riddle-verdict"), d);
-    } catch (e) { $("riddle-verdict").textContent = "⚠ " + e.message; }
-    finally { btn.disabled = false; setSpin("riddle-check-spin", false); }
-  });
+      const prompt =
+        "Riddle:\n" + currentRiddle + "\n\nUser's guess: " + guess + "\n\n" +
+        "Decide if the guess is correct. Reply in this format:\n" +
+        "Verdict: <Correct / Close / Incorrect>\n" +
+        "Answer: <the intended answer>\n" +
+        "Note: <one encouraging sentence; if incorrect, add a subtle hint>";
+      $("riddle-verdict").textContent = await aiChat(RIDDLE_CHECK_SYS, prompt);
+    } catch (e) {
+      showError($("riddle-verdict"), e.message, runRiddleCheck);
+    } finally {
+      btn.disabled = false; setSpin("riddle-check-spin", false);
+    }
+  }
+  $("riddle-check").addEventListener("click", runRiddleCheck);
 
-  $("explain-btn").addEventListener("click", async () => {
+  async function runExplain() {
     const btn = $("explain-btn");
+    const question = $("explain-q").value.trim();
+    if (!question) {
+      $("explain-out").textContent = "⚠ Type something you're curious about first.";
+      return;
+    }
     btn.disabled = true; setSpin("explain-spin", true); $("explain-out").textContent = "";
     try {
-      const d = await postJSON("/api/ai/explain", { question: $("explain-q").value });
-      showResult($("explain-out"), d);
-    } catch (e) { $("explain-out").textContent = "⚠ " + e.message; }
-    finally { btn.disabled = false; setSpin("explain-spin", false); }
-  });
+      $("explain-out").textContent = await aiChat(EXPLAIN_SYS, question);
+    } catch (e) {
+      showError($("explain-out"), e.message, runExplain);
+    } finally {
+      btn.disabled = false; setSpin("explain-spin", false);
+    }
+  }
+  $("explain-btn").addEventListener("click", runExplain);
 </script>
 </body>
 </html>
