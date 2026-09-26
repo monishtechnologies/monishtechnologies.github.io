@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -79,9 +79,10 @@
     border-color: transparent;
   }
 
-  main { max-width: 760px; margin: 0 auto; padding: 8px 16px 60px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 60px; }
   .panel { display: none; animation: fade .3s ease; }
   .panel.active { display: block; }
+  .panel:not(#comics) { max-width: 760px; margin: 0 auto; }
   @keyframes fade { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform:none;} }
 
   .card {
@@ -203,6 +204,118 @@
 
   .dice-face { font-size: 3rem; margin-top: 10px; }
   .big-num { font-size: 2.6rem; font-weight: 800; color: var(--accent2); }
+  #comics { color: #17162b; }
+  .comics-intro { color: var(--text); margin: 0 0 26px; }
+  .comics-intro h2 { margin: 0 0 4px; font-size: clamp(1.8rem, 4vw, 2.6rem); }
+  .comics-intro p { color: var(--muted); margin: 0; }
+  .comic-strip { margin-bottom: 36px; --ink: #17162b; --paper: #ffe16b; --scene: #ffb76d; --pop: #ff4961; }
+  .comic-strip:nth-of-type(2) { --paper: #b7f7ec; --scene: #66cfe0; --pop: #ff668d; }
+  .comic-strip:nth-of-type(3) { --paper: #ffb5db; --scene: #b49dfa; --pop: #fff06b; }
+  .comic-strip:nth-of-type(4) { --paper: #c9ed8e; --scene: #ffc591; --pop: #f65f65; }
+  .comic-strip:nth-of-type(5) { --paper: #ffdab6; --scene: #ff9f8b; --pop: #62e1c5; }
+  .comic-heading { display: flex; align-items: baseline; gap: 14px; margin: 0 0 10px; color: var(--text); }
+  .comic-heading span { color: var(--accent2); font: 800 .85rem "Trebuchet MS", sans-serif; }
+  .comic-heading h3 { margin: 0; font: 900 1.45rem "Trebuchet MS", sans-serif; }
+  .comic-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .comic-frame {
+    position: relative; isolation: isolate; overflow: hidden;
+    display: flex; flex-direction: column; min-height: 310px;
+    padding: 14px; background: var(--paper); border: 4px solid var(--ink);
+    box-shadow: 5px 5px 0 rgba(0,0,0,.35);
+  }
+  .comic-frame::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: radial-gradient(circle, rgba(23,22,43,.14) 1px, transparent 1.5px) 0 0 / 12px 12px;
+    mask-image: linear-gradient(to bottom, transparent 8%, #000 100%);
+  }
+  .comic-bubble {
+    position: relative; z-index: 2; align-self: flex-start;
+    max-width: 94%; padding: 10px 13px; background: #fffdf6;
+    border: 3px solid var(--ink); border-radius: 18px 18px 18px 3px;
+    font: 700 1rem/1.25 "Trebuchet MS", sans-serif;
+    box-shadow: 3px 3px 0 rgba(23,22,43,.15);
+  }
+  .comic-art {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    flex: 1; min-height: 158px; margin: 10px -14px 0;
+    background: radial-gradient(circle at 50% 85%, rgba(255,255,255,.7) 0 15%, transparent 47%),
+      linear-gradient(160deg, transparent 25%, var(--scene));
+  }
+  .comic-art::after {
+    content: ""; position: absolute; bottom: 13%; left: 21%; width: 58%; height: 13px;
+    background: rgba(23,22,43,.18); border-radius: 50%; filter: blur(5px);
+  }
+  .comic-character {
+    position: relative; z-index: 1; font-size: clamp(4rem, 8vw, 6rem); line-height: 1;
+    filter: drop-shadow(3px 5px 0 rgba(23,22,43,.18));
+    transform: rotate(-8deg);
+  }
+  .comic-character + .comic-character { margin-left: -8px; transform: rotate(10deg); }
+  .comic-burst {
+    position: absolute; z-index: 3; right: 2%; top: 9%;
+    display: grid; place-items: center; width: 140px; aspect-ratio: 1;
+    padding: 20px; text-align: center;
+    background: var(--pop); color: var(--ink);
+    clip-path: polygon(50% 0%, 60% 25%, 82% 7%, 78% 33%, 100% 29%, 83% 49%, 100% 66%, 75% 64%, 82% 94%, 59% 76%, 50% 100%, 40% 76%, 16% 94%, 25% 65%, 0% 67%, 18% 49%, 0% 30%, 25% 33%, 18% 7%, 40% 25%);
+    font: 900 clamp(1.2rem, 3vw, 1.7rem)/1 "Trebuchet MS", sans-serif;
+    text-shadow: 2px 2px #fff;
+    transform: rotate(12deg);
+  }
+  .comic-caption {
+    z-index: 2; margin: auto -14px -14px; padding: 9px 12px;
+    background: #fffdf6; border-top: 3px solid var(--ink);
+    font: 700 .88rem/1.3 "Trebuchet MS", sans-serif;
+  }
+  #comic-gallery[hidden], #comic-reader[hidden] { display: none; }
+  #comic-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .comic-cover {
+    position: relative; overflow: hidden; display: flex; flex-direction: column;
+    min-height: 230px; padding: 22px; text-align: left; cursor: pointer;
+    color: #17162b; background: var(--cover); border: 4px solid #17162b;
+    border-radius: 4px; box-shadow: 6px 6px 0 rgba(0,0,0,.35);
+    font-family: "Trebuchet MS", sans-serif; transition: transform .15s, box-shadow .15s;
+  }
+  .comic-cover:nth-child(1) { --cover: #ffe16b; }
+  .comic-cover:nth-child(2) { --cover: #b7f7ec; }
+  .comic-cover:nth-child(3) { --cover: #ffb5db; }
+  .comic-cover:nth-child(4) { --cover: #c9ed8e; }
+  .comic-cover:nth-child(5) { --cover: #ffdab6; }
+  .comic-cover::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle, rgba(23,22,43,.14) 1px, transparent 1.5px) 0 0 / 12px 12px;
+    pointer-events: none;
+  }
+  .comic-cover:hover, .comic-cover:focus-visible { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgba(0,0,0,.35); }
+  .comic-cover-number, .comic-cover-title, .comic-cover-art { position: relative; z-index: 1; }
+  .comic-cover-number { font-size: .85rem; font-weight: 900; }
+  .comic-cover-title { margin-top: 8px; max-width: 75%; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; line-height: 1.1; }
+  .comic-cover-art { align-self: flex-end; margin-top: auto; font-size: 4.6rem; line-height: 1; transform: rotate(-9deg); }
+  .comic-reader-top, .comic-reader-controls {
+    max-width: 680px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  /* end of comic-reader-top and comic-reader-controls styling */
+  }
+  .comic-reader-top { margin-bottom: 18px; }
+  .comic-reader-top span { color: var(--accent2); font: 900 .9rem "Trebuchet MS", sans-serif; }
+  #comic-reader .comic-strip { display: none; max-width: 680px; margin: 0 auto 20px; }
+  #comic-reader .comic-strip.reading { display: block; }
+  #comic-reader .comic-panels { display: block; }
+  #comic-reader .comic-frame { display: none; min-height: 430px; }
+  #comic-reader .comic-frame.current { display: flex; animation: fade .25s ease; }
+  #comic-reader .comic-frame.current:not(:last-child) { cursor: pointer; }
+  #comic-reader .comic-art { min-height: 260px; }
+  #comic-reader .comic-character { font-size: clamp(5rem, 14vw, 8rem); }
+  #comic-reader .comic-burst { width: clamp(140px, 24vw, 190px); font-size: clamp(1.3rem, 3vw, 2rem); }
+  .comic-reader-controls button { min-width: 110px; }
+  @media (max-width: 700px) {
+    #comic-gallery { grid-template-columns: 1fr; }
+    .comic-cover { min-height: 175px; }
+    #comic-reader .comic-frame { min-height: 330px; }
+    #comic-reader .comic-art { min-height: 180px; }
+    #comic-reader .comic-burst { width: 135px; font-size: 1.25rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #comics.panel, #comic-reader .comic-frame.current { animation: none; }
+  }
   footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 20px; }
 </style>
 </head>
@@ -216,6 +329,7 @@
 
   <nav id="nav">
     <button data-target="activity" class="active">🎯 Activity</button>
+    <button data-target="comics">💥 Comics</button>
     <button data-target="joke">😂 Joke</button>
     <button data-target="fact">🧠 Fact</button>
     <button data-target="wyr">🤔 Would You Rather</button>
@@ -237,6 +351,237 @@
         <p class="hint">A quick idea to beat boredom.</p>
         <button class="action" id="activity-btn">Give me something to do</button>
         <div class="output big" id="activity-out">Click the button…</div>
+      </div>
+    </section>
+
+    <!-- Comics -->
+    <section class="panel" id="comics">
+      <div class="comics-intro">
+        <h2>💥 The comic shelf</h2>
+        <p>Five twist-filled stories with very loud sound effects.</p>
+      </div>
+
+      <div id="comic-gallery">
+        <button class="comic-cover" type="button" data-comic="0"><span class="comic-cover-number">01 / 05</span><span class="comic-cover-title">The snack signal</span><span class="comic-cover-art" aria-hidden="true">🤖🍪</span></button>
+        <button class="comic-cover" type="button" data-comic="1"><span class="comic-cover-number">02 / 05</span><span class="comic-cover-title">Puddle jumper</span><span class="comic-cover-art" aria-hidden="true">🥾💦</span></button>
+        <button class="comic-cover" type="button" data-comic="2"><span class="comic-cover-number">03 / 05</span><span class="comic-cover-title">The runaway book</span><span class="comic-cover-art" aria-hidden="true">📖🚀</span></button>
+        <button class="comic-cover" type="button" data-comic="3"><span class="comic-cover-number">04 / 05</span><span class="comic-cover-title">The shy thundercloud</span><span class="comic-cover-art" aria-hidden="true">🌩️🌈</span></button>
+        <button class="comic-cover" type="button" data-comic="4"><span class="comic-cover-number">05 / 05</span><span class="comic-cover-title">Mosquito Saver</span><span class="comic-cover-art" aria-hidden="true">🧑🦟</span></button>
+      </div>
+
+      <div id="comic-reader" hidden>
+        <div class="comic-reader-top">
+          <button class="ghost" type="button" id="comic-back">All comics</button>
+          <span id="comic-page" aria-live="polite"></span>
+        </div>
+
+      <article class="comic-strip" aria-labelledby="comic-title-1">
+        <div class="comic-heading"><span>01 / 05</span><h3 id="comic-title-1">The snack signal</h3></div>
+        <div class="comic-panels">
+          <div class="comic-frame">
+            <div class="comic-bubble">My robot is out of power. The science fair starts in an hour!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Robot">🤖</span><span class="comic-character" role="img" aria-label="Empty battery">🪫</span></div>
+            <div class="comic-caption">No charger. No spare battery. One worried inventor.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Maybe this cookie will help? It's all I've got.</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Robot">🤖</span><span class="comic-character" role="img" aria-label="Cookie">🍪</span><span class="comic-burst">CRUNCH!</span></div>
+            <div class="comic-caption">The robot eats the cookie. That was not in the manual.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">POWER LEVEL: DELICIOUS.</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Robot">🤖</span><span class="comic-character" role="img" aria-label="Lightning">⚡</span><span class="comic-burst">ZAP!</span></div>
+            <div class="comic-caption">It works! But the robot's antenna starts flashing.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Why is my radio beeping back?</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Robot">🤖</span><span class="comic-character" role="img" aria-label="Radio">📻</span><span class="comic-burst">BEEP!</span></div>
+            <div class="comic-caption">The cookie didn't just charge the robot. It sent a signal.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">That signal is coming from... the Moon?!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Moon">🌕</span><span class="comic-character" role="img" aria-label="Satellite dish">📡</span><span class="comic-burst">PING!</span></div>
+            <div class="comic-caption">Something far away answers the robot's message.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Your cookie called our bakery. Need a refill?</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Flying saucer">🛸</span><span class="comic-character" role="img" aria-label="Cookie">🍪</span><span class="comic-burst">WHOOSH!</span></div>
+            <div class="comic-caption">A spaceship lands outside, full of alien bakers.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Great. Can you deliver to the science fair?</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Robot">🤖</span><span class="comic-character" role="img" aria-label="Cookies">🍪</span><span class="comic-burst">TA-DA!</span></div>
+            <div class="comic-caption">First prize: a robot that can order its own snacks.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="comic-strip" aria-labelledby="comic-title-2">
+        <div class="comic-heading"><span>02 / 05</span><h3 id="comic-title-2">Puddle jumper</h3></div>
+        <div class="comic-panels">
+          <div class="comic-frame">
+            <div class="comic-bubble">It's just a tiny puddle. I can jump across.</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Rain boots">🥾</span><span class="comic-character" role="img" aria-label="Water">💧</span></div>
+            <div class="comic-caption">A kid takes a shortcut home after the rain.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Where did the sidewalk go?!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Wave">🌊</span><span class="comic-character" role="img" aria-label="Boot">🥾</span><span class="comic-burst">SPLASH!</span></div>
+            <div class="comic-caption">The puddle is a doorway to an underwater kingdom.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Our royal crown is missing! The sea is draining!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Fish">🐠</span><span class="comic-character" role="img" aria-label="Underwater castle">🏰</span><span class="comic-burst">GLUB!</span></div>
+            <div class="comic-caption">A fish begs the kid to help save its home.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Wait... what's stuck under my boot?</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Boot">🥾</span><span class="comic-character" role="img" aria-label="Crown">👑</span><span class="comic-burst">POP!</span></div>
+            <div class="comic-caption">The boot accidentally pulled the crown away on landing.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">That crown is also the plug for our sea!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Crown">👑</span><span class="comic-character" role="img" aria-label="Whirlpool">🌀</span><span class="comic-burst">GURGLE!</span></div>
+            <div class="comic-caption">Without it, water pours out of the kingdom.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Quick! Put it back where I landed!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Boot">🥾</span><span class="comic-character" role="img" aria-label="Crown">👑</span><span class="comic-burst">PLONK!</span></div>
+            <div class="comic-caption">The kid plugs the hole. The sea fills up again.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">All hail the Royal Boot!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Boot">🥾</span><span class="comic-character" role="img" aria-label="Seashell">🐚</span><span class="comic-burst">HOORAY!</span></div>
+            <div class="comic-caption">Back on the sidewalk, the kid finds a seashell medal on that boot.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="comic-strip" aria-labelledby="comic-title-3">
+        <div class="comic-heading"><span>03 / 05</span><h3 id="comic-title-3">The runaway book</h3></div>
+        <div class="comic-panels">
+          <div class="comic-frame">
+            <div class="comic-bubble">One more chapter...</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Open book">📖</span><span class="comic-character" role="img" aria-label="Sleepy face">😴</span></div>
+            <div class="comic-caption">A kid stays up late reading a favorite book.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Hey! Come back with my story!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Flying book">📖</span><span class="comic-burst">WHOOSH!</span></div>
+            <div class="comic-caption">The book flies out the window. The kid grabs hold.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">A book with rocket engines?!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Rocket">🚀</span><span class="comic-character" role="img" aria-label="Open book">📖</span><span class="comic-burst">BOOM!</span></div>
+            <div class="comic-caption">The book blasts off with the kid still holding on.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Welcome to the Moon Library. We need help!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Moon">🌕</span><span class="comic-character" role="img" aria-label="Books">📚</span><span class="comic-burst">THUD!</span></div>
+            <div class="comic-caption">Every book in the library is missing its ending.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Who stole the endings? ...Wait, these pages are blank!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Blank page">📄</span><span class="comic-character" role="img" aria-label="Magnifying glass">🔍</span><span class="comic-burst">GASP!</span></div>
+            <div class="comic-caption">Nobody stole them. The Moon Library has no one to write them.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">So you weren't running away. You came to find a writer!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Kid">🧒</span><span class="comic-character" role="img" aria-label="Book">📖</span><span class="comic-burst">DING!</span></div>
+            <div class="comic-caption">The flying book picked the kid for the job.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Once upon a time, a book flew to the Moon...</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Pencil">✏️</span><span class="comic-character" role="img" aria-label="Open book">📖</span><span class="comic-burst">TA-DA!</span></div>
+            <div class="comic-caption">The first story the kid finishes is the one you just read.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="comic-strip" aria-labelledby="comic-title-4">
+        <div class="comic-heading"><span>04 / 05</span><h3 id="comic-title-4">The shy thundercloud</h3></div>
+        <div class="comic-panels">
+          <div class="comic-frame">
+            <div class="comic-bubble">Don't sneeze. The parade is starting below!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Cloud">☁️</span><span class="comic-character" role="img" aria-label="Flower">🌼</span></div>
+            <div class="comic-caption">At sunset, a shy cloud drifts over a town parade.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Aaaa... CHOO!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Thundercloud">🌩️</span><span class="comic-burst">KABOOM!</span></div>
+            <div class="comic-caption">Its sneeze makes lightning strike. The parade lights go out.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">I ruined everything. I'll hide behind this roof.</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Cloud">☁️</span><span class="comic-character" role="img" aria-label="Houses">🏘️</span></div>
+            <div class="comic-caption">The street is dark, and the cloud feels terrible.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">That boom sounded like our drum! We came to help!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Fireflies">✨</span><span class="comic-character" role="img" aria-label="Lantern">🏮</span><span class="comic-burst">TWINKLE!</span></div>
+            <div class="comic-caption">Fireflies follow the thunder and light the street.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Oh no. Now I'm raining on everyone!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Rain cloud">🌧️</span><span class="comic-character" role="img" aria-label="Raindrops">💧</span><span class="comic-burst">SPLASH!</span></div>
+            <div class="comic-caption">The raindrops catch the glow of the fireflies.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Look! The sunset is making a rainbow!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Rainbow">🌈</span><span class="comic-character" role="img" aria-label="Sparkles">✨</span><span class="comic-burst">TA-DA!</span></div>
+            <div class="comic-caption">The whole town stops to watch the sky.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Lead the parade! Your thunder can be the beat!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Thundercloud">🌩️</span><span class="comic-character" role="img" aria-label="Drum">🥁</span><span class="comic-burst">BOOM!</span></div>
+            <div class="comic-caption">The cloud stops hiding and leads the brightest parade yet.</div>
+          </div>
+        </div>
+      </article>
+      <article class="comic-strip" aria-labelledby="comic-title-5">
+        <div class="comic-heading"><span>05 / 05</span><h3 id="comic-title-5">Mosquito Saver</h3></div>
+        <div class="comic-panels">
+          <div class="comic-frame">
+            <div class="comic-bubble">What's that little buzzing sound?</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Monish">🧑</span><span class="comic-character" role="img" aria-label="Mosquito">🦟</span><span class="comic-burst">BUZZ!</span></div>
+            <div class="comic-caption">Monish spots a mosquito resting on a leaf.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">I drank too much blood. I'm too full to fly!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Mosquito">🦟</span><span class="comic-character" role="img" aria-label="Drop of blood">🩸</span></div>
+            <div class="comic-caption">Its wings flap, but its heavy belly keeps it on the leaf.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Hold on. I think I can help you.</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Monish">🧑</span><span class="comic-character" role="img" aria-label="Tiny syringe">💉</span><span class="comic-burst">AHA!</span></div>
+            <div class="comic-caption">Monish finds a tiny syringe in his science kit.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">Just a little of that extra blood...</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Tiny syringe">💉</span><span class="comic-character" role="img" aria-label="Mosquito">🦟</span><span class="comic-burst">SLOORP!</span></div>
+            <div class="comic-caption">With the mosquito's okay, Monish gently draws off a little blood.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">I can lift my wings again! Wait... not quite!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Mosquito">🦟</span><span class="comic-character" role="img" aria-label="Leaf">🍃</span><span class="comic-burst">FLAP!</span></div>
+            <div class="comic-caption">The mosquito rises an inch, then lands. One wing is stuck to the leaf.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">It's only a drop of sticky juice. You're free!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Monish">🧑</span><span class="comic-character" role="img" aria-label="Free mosquito">🦟</span><span class="comic-burst">POP!</span></div>
+            <div class="comic-caption">Monish lifts the leaf away from the wing without hurting it.</div>
+          </div>
+          <div class="comic-frame">
+            <div class="comic-bubble">I'M FLYING! Thanks, Monish! Next time, smaller sips!</div>
+            <div class="comic-art"><span class="comic-character" role="img" aria-label="Flying mosquito">🦟</span><span class="comic-character" role="img" aria-label="Monish waving">👋</span><span class="comic-burst">ZOOM!</span></div>
+            <div class="comic-caption">The mosquito loops through the air and flies home after it drank some of monish's blood. Monish waves badbye. [LOL] 😂</div>
+          </div>
+        </div>
+      </article>
+        <div class="comic-reader-controls">
+          <button class="ghost" type="button" id="comic-prev">Previous page</button>
+          <button class="action" type="button" id="comic-next">Next page</button>
+        </div>
       </div>
     </section>
 
@@ -732,6 +1077,56 @@
       document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
       $(btn.dataset.target).classList.add("active");
     });
+  });
+
+  const comicStories = [...document.querySelectorAll("#comic-reader .comic-strip")];
+  let activeComic = null;
+  let comicPage = 0;
+
+  function showComicPage() {
+    comicStories.forEach((story, storyIndex) => {
+      story.classList.toggle("reading", storyIndex === activeComic);
+      story.querySelectorAll(".comic-frame").forEach((frame, pageIndex) => {
+        frame.classList.toggle("current", storyIndex === activeComic && pageIndex === comicPage);
+      });
+    });
+    const pageCount = comicStories[activeComic].querySelectorAll(".comic-frame").length;
+    $("comic-page").textContent = `PAGE ${comicPage + 1} / ${pageCount}`;
+    $("comic-prev").disabled = comicPage === 0;
+    $("comic-next").textContent = comicPage === pageCount - 1 ? "All comics" : "Next page";
+  }
+
+  document.querySelectorAll(".comic-cover").forEach((cover) => {
+    cover.addEventListener("click", () => {
+      activeComic = Number(cover.dataset.comic);
+      comicPage = 0;
+      $("comic-gallery").hidden = true;
+      $("comic-reader").hidden = false;
+      showComicPage();
+      $("comic-back").focus();
+    });
+  });
+
+  function closeComic() {
+    $("comic-reader").hidden = true;
+    $("comic-gallery").hidden = false;
+    document.querySelector(`.comic-cover[data-comic="${activeComic}"]`).focus();
+    activeComic = null;
+  }
+
+  $("comic-back").addEventListener("click", closeComic);
+  $("comic-prev").addEventListener("click", () => {
+    if (comicPage > 0) { comicPage--; showComicPage(); }
+  });
+  $("comic-next").addEventListener("click", () => {
+    if (comicPage === comicStories[activeComic].querySelectorAll(".comic-frame").length - 1) closeComic();
+    else { comicPage++; showComicPage(); }
+  });
+  $("comic-reader").addEventListener("click", (event) => {
+    if (event.target.closest(".comic-frame.current") && comicPage < comicStories[activeComic].querySelectorAll(".comic-frame").length - 1) {
+      comicPage++;
+      showComicPage();
+    }
   });
 
   // ---- AI status ----------------------------------------------------------
